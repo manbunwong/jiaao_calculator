@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>嘉澳环保 SAF 利润测算器 </title>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 React 和 ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 引入 Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 引入 Lucide 图标 -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #e2e8f0; 
+            height: 100vh;
+            overflow: hidden; 
+            display: flex;
+            justify-content: center; 
+            align-items: center; 
+        }
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+            height: 16px; 
+            display: block;
+            margin-top: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #4f46e5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-top: -6px; 
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+        .orange-slider::-webkit-slider-thumb {
+            border: 2px solid #f97316;
+        }
+        .purple-slider::-webkit-slider-thumb {
+            border: 2px solid #9333ea;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield; 
+        }
+    </style>
+</head>
+<body>
+    <div id="root" class="w-full h-full flex justify-center items-center"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Calculator, BarChart3, Settings, AlertCircle, TrendingUp, DollarSign, RefreshCw, Calendar, Fuel, ArrowRightLeft, PieChart } = lucide;
+
+        const JiaaoSafCalculator = () => {
+            // --- 核心参数状态 (State) ---
+            const [safPriceUsd, setSafPriceUsd] = useState(2100); 
+            const [ucoPriceRmb, setUcoPriceRmb] = useState(6300); 
+            const [naphthaPriceRmb, setNaphthaPriceRmb] = useState(6000); 
+            const [exchangeRate, setExchangeRate] = useState(7.1); 
+            const [yieldRate, setYieldRate] = useState(74.6); 
+            const [processCost, setProcessCost] = useState(2500); 
+            const [taxFactor, setTaxFactor] = useState(1.07); 
+            const [equityRatio, setEquityRatio] = useState(53.55); 
+            
+            const TOTAL_SHARES = 0.76825886; 
+            const [marketCap, setMarketCap] = useState(63.00); 
+            const [sharePrice, setSharePrice] = useState(82.00); 
+
+            const volumeYearly = 37.3; 
+            const volumeMonthly = volumeYearly / 12; 
+            const volumeQuarterly = volumeYearly / 4; 
+            const NAPHTHA_RATIO = 4.3 / 37.3; 
+
+            // --- 计算结果状态 ---
+            const [commonData, setCommonData] = useState({ safRevenue: 0, naphthaCredit: 0, grossCost: 0, netCost: 0 });
+            const [scenarioExcl, setScenarioExcl] = useState({ profitPerTon: 0, margin: 0, monthlyProfit: 0, quarterlyProfit: 0, annualProfit: 0, attributable: 0, pe: 0 });
+            const [scenarioIncl, setScenarioIncl] = useState({ profitPerTon: 0, margin: 0, monthlyProfit: 0, quarterlyProfit: 0, annualProfit: 0, attributable: 0, pe: 0 });
+
+            // --- 联动处理函数 ---
+            const handleMarketCapChange = (val) => { setMarketCap(val); setSharePrice(val / TOTAL_SHARES); };
+            const handleSharePriceChange = (val) => { setSharePrice(val); setMarketCap(val * TOTAL_SHARES); };
+
+            useEffect(() => { setSharePrice(marketCap / TOTAL_SHARES); if (window.lucide) window.lucide.createIcons(); }, []);
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+
+            // --- 核心计算逻辑 ---
+            useEffect(() => {
+                const safRevenue = safPriceUsd * exchangeRate;
+                const naphthaCredit = naphthaPriceRmb * NAPHTHA_RATIO;
+                const unitConsumption = 1 / (yieldRate / 100);
+                const rawMaterialCost = ucoPriceRmb * unitConsumption;
+                const baseCost = rawMaterialCost + processCost;
+                const totalGrossCost = baseCost * taxFactor; 
+                const netCost = totalGrossCost - naphthaCredit;
+
+                setCommonData({ safRevenue, naphthaCredit, grossCost: totalGrossCost, netCost: netCost });
+
+                const calculateScenario = (cost) => {
+                    const profit = safRevenue - cost;
+                    const margin = (profit / safRevenue) * 100;
+                    const annual = (profit * volumeYearly * 10000) / 100000000;
+                    const attr = annual * (equityRatio / 100);
+                    const pe = attr > 0 ? marketCap / attr : 0;
+                    return { profitPerTon: profit, margin, monthlyProfit: annual/12, quarterlyProfit: annual/4, annualProfit: annual, attributable: attr, pe };
+                };
+
+                setScenarioExcl(calculateScenario(totalGrossCost));
+                setScenarioIncl(calculateScenario(netCost));
+
+            }, [safPriceUsd, ucoPriceRmb, naphthaPriceRmb, exchangeRate, yieldRate, processCost, taxFactor, equityRatio, marketCap]);
+
+            const fmt = (num, fixed = 0) => num.toLocaleString('zh-CN', { minimumFractionDigits: fixed, maximumFractionDigits: fixed });
+
+            return (
+                <div className="w-full max-w-[710px] h-[95vh] flex flex-col bg-slate-50 text-slate-900 shadow-2xl rounded-2xl overflow-hidden border border-slate-300">
+                    
+                    {/* 顶部导航 */}
+                    <div className="bg-white shadow-sm border-b border-slate-200 shrink-0 z-20">
+                        <div className="px-3 py-2 flex items-center justify-between">
+                            <h1 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="calculator" className="w-4 h-4 text-indigo-600"></i>
+                                嘉澳环保 SAF 利润测算器
+                            </h1>
+                            
+                            <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                                <div className="flex items-center gap-1">
+                                    <label className="text-xs text-indigo-600 font-medium">股价</label>
+                                    <input type="number" value={sharePrice.toFixed(2)} onChange={(e) => handleSharePriceChange(Number(e.target.value))}
+                                        className="w-14 text-right font-bold text-sm text-slate-900 bg-transparent outline-none border-b border-transparent focus:border-indigo-500"/>
+                                </div>
+                                <div className="text-slate-900 mx-1">|</div>
+                                <div className="flex items-center gap-1">
+                                    <label className="text-xs text-indigo-600 font-medium">市值(亿)</label>
+                                    <input type="number" value={marketCap.toFixed(2)} onChange={(e) => handleMarketCapChange(Number(e.target.value))}
+                                        className="w-12 text-right font-bold text-sm text-slate-900 bg-transparent outline-none border-b border-transparent focus:border-indigo-500"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 主内容区 - 左侧 17rem */}
+                    <div className="flex-1 grid grid-cols-[17rem_1fr] gap-2 p-2 min-h-0">
+                        
+                        {/* 左侧：控制面板 - 已將背景顏色改回白色，並恢復柔和的邊框和陰影。 */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 overflow-y-auto flex flex-col gap-3">
+                            <div className="flex items-center gap-2 text-sm font-bold text-slate-900 border-b border-slate-200 pb-2">
+                                <i data-lucide="settings" className="w-3 h-3"></i> 核心变量
+                            </div>
+
+                            {/* 变量组 1: SAF */}
+                            <div className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-bold text-indigo-800">SAF 出口售价 ($)</label>
+                                    <div className="flex items-center gap-1 scale-90 origin-right">
+                                        <button onClick={() => setSafPriceUsd(p => p - 100)} className="px-1.5 py-0.5 bg-slate-100 rounded text-xs text-slate-900 hover:bg-slate-200">-100</button>
+                                        <input type="number" step="10" value={safPriceUsd} onChange={(e) => setSafPriceUsd(Number(e.target.value))}
+                                            className="w-12 text-center text-sm font-bold text-indigo-600 bg-indigo-50 rounded outline-none"/>
+                                        <button onClick={() => setSafPriceUsd(p => p + 100)} className="px-1.5 py-0.5 bg-slate-100 rounded text-xs text-slate-900 hover:bg-slate-200">+100</button>
+                                    </div>
+                                </div>
+                                <input type="range" min="1500" max="3000" step="10" value={safPriceUsd} onChange={(e) => setSafPriceUsd(Number(e.target.value))} className="w-full"/>
+                            </div>
+
+                            {/* 变量组 2: UCO */}
+                            <div className="space-y-1 pt-2 border-t border-slate-100">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-xs font-bold text-indigo-800">UCO 采购价 (¥)</label>
+                                    <div className="flex items-center gap-1 scale-90 origin-right">
+                                        <button onClick={() => setUcoPriceRmb(p => p - 100)} className="px-1.5 py-0.5 bg-slate-100 rounded text-xs text-slate-900 hover:bg-slate-200">-100</button>
+                                        <input type="number" step="10" value={ucoPriceRmb} onChange={(e) => setUcoPriceRmb(Number(e.target.value))}
+                                            className="w-12 text-center text-sm font-bold text-indigo-600 bg-indigo-50 rounded outline-none"/>
+                                        <button onClick={() => setUcoPriceRmb(p => p + 100)} className="px-1.5 py-0.5 bg-slate-100 rounded text-xs text-slate-900 hover:bg-slate-200">+100</button>
+                                    </div>
+                                </div>
+                                <input type="range" min="5000" max="8000" step="10" value={ucoPriceRmb} onChange={(e) => setUcoPriceRmb(Number(e.target.value))} className="w-full"/>
+                            </div>
+
+                            {/* 变量组 3: 副产品 */}
+                            <div className="space-y-1 pt-2 border-t border-slate-100">
+                                <div className="flex justify-between items-center">
+                                    <div className="flex flex-col">
+                                        <label className="text-xs font-bold text-indigo-800">生物石脑油 (¥)</label>
+                                        <span className="text-xs text-slate-900">产量4.3万吨</span>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-1 scale-90 origin-right">
+                                        <div className="px-1.5 py-0.5 text-xs invisible">-100</div>
+                                        <input 
+                                            type="number" 
+                                            step="10" 
+                                            value={naphthaPriceRmb} 
+                                            onChange={(e) => setNaphthaPriceRmb(Number(e.target.value))}
+                                            className="w-12 text-center text-sm font-bold text-indigo-600 bg-indigo-50 rounded outline-none"
+                                        />
+                                        <div className="px-1.5 py-0.5 text-xs invisible">+100</div>
+                                    </div>
+                                </div>
+                                <input type="range" min="4000" max="9000" step="100" value={naphthaPriceRmb} onChange={(e) => setNaphthaPriceRmb(Number(e.target.value))} className="w-full"/>
+                            </div>
+
+                            {/* 其他参数 Grid */}
+                            <div className="grid grid-cols-1 gap-3 pt-3 border-t border-slate-100 flex-1 content-start">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs text-slate-900 font-medium">汇率</label>
+                                    <input type="number" step="0.01" value={exchangeRate} onChange={(e) => setExchangeRate(Number(e.target.value))} 
+                                        className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white"/>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs text-slate-900 font-medium">收率 (%)</label>
+                                    <input type="number" value={yieldRate} onChange={(e) => setYieldRate(Number(e.target.value))} 
+                                        className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white"/>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs text-slate-900 font-medium">加工成本</label>
+                                    <input type="number" step="100" value={processCost} onChange={(e) => setProcessCost(Number(e.target.value))} 
+                                        className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white"/>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs text-slate-900 font-medium">综合税率</label>
+                                    <input type="number" step="0.01" value={taxFactor} onChange={(e) => setTaxFactor(Number(e.target.value))} 
+                                        className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white"/>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs text-slate-900 font-medium">上市公司权益比例 (%)</label>
+                                    <input type="number" step="0.01" value={equityRatio} onChange={(e) => setEquityRatio(Number(e.target.value))} 
+                                        className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 右侧：结果展示 */}
+                        <div className="flex flex-col gap-2 min-h-0">
+                            
+                            {/* 上部分：表格 */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden shrink-0">
+                                <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex justify-between items-center">
+                                    <span className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                                        <i data-lucide="arrow-right-left" className="w-3 h-3 text-slate-900"></i> 单吨模型敏感度
+                                    </span>
+                                </div>
+                                <table className="w-full text-xs text-left">
+                                    <thead className="bg-slate-50/50 text-slate-900 border-b border-slate-100">
+                                        <tr>
+                                            {/* Col 1: pl-8 对齐 "单" */}
+                                            <th className="pl-8 pr-3 py-2 font-medium w-[25%]">指标</th>
+                                            {/* Col 2: text-center, 对齐下方利润预测的 仅SAF 居中 */}
+                                            <th className="px-3 py-2 font-bold text-slate-900 text-center w-[33%]">仅SAF</th>
+                                            {/* Col 3: text-center, 对齐下方归母净利的右侧 */}
+                                            <th className="px-3 py-2 font-bold text-indigo-700 text-center w-[42%]">综合 <span className="font-bold text-xs text-indigo-700">(含石脑油抵扣)</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        <tr>
+                                            <td className="pl-8 pr-3 py-1.5 text-slate-900">SAF 售价</td>
+                                            <td className="px-3 py-1.5 font-bold text-slate-900 text-center">{fmt(commonData.safRevenue)}</td>
+                                            <td className="px-3 py-1.5 font-bold text-indigo-700 text-center">{fmt(commonData.safRevenue)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="pl-8 pr-3 py-1.5 text-slate-900">单吨成本</td>
+                                            <td className="px-3 py-1.5 font-bold text-slate-900 text-center">{fmt(commonData.grossCost)}</td>
+                                            <td className="px-3 py-1.5 font-bold text-indigo-700 text-center">{fmt(commonData.netCost)} <span className="text-xs font-bold text-indigo-700">(抵扣 -{fmt(commonData.naphthaCredit)})</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td className="pl-8 pr-3 py-1.5 text-slate-900">单吨毛利</td>
+                                            <td className="px-3 py-1.5 font-bold text-slate-900 text-center">{fmt(scenarioExcl.profitPerTon)}</td>
+                                            <td className="px-3 py-1.5 font-bold text-indigo-700 text-center">{fmt(scenarioIncl.profitPerTon)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="pl-8 pr-3 py-1.5 text-slate-900">毛利率</td>
+                                            <td className="px-3 py-1.5 font-bold text-slate-900 text-center">{scenarioExcl.margin.toFixed(1)}%</td>
+                                            <td className="px-3 py-1.5 font-bold text-indigo-700 text-center">{scenarioIncl.margin.toFixed(1)}%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* 中部分：利润预测 & 估值 */}
+                            <div className="flex-1 min-h-0 grid grid-cols-12 gap-0">
+                                {/* 利润预测 (占7份) */}
+                                <div className="col-span-7 bg-white shadow-sm border border-slate-200 rounded-l-xl rounded-r-none border-r-0 p-3 flex flex-col">
+                                    {/* 調整：移除 mb-1 和 pb-0.5，並將 border-b 移到下方 grid 容器的 div 上 */}
+                                    <div className="flex items-center justify-between gap-1 overflow-hidden">
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <i data-lucide="bar-chart-3" className="w-3 h-3 text-slate-900"></i>
+                                            <span className="font-bold text-sm text-slate-900 whitespace-nowrap">利润预测 (亿)</span>
+                                        </div>
+                                        <div className="flex gap-1.5 text-xs shrink-0">
+                                            <span className="text-slate-900">● 仅SAF</span>
+                                            <span className="text-indigo-600 font-bold">● 综合</span>
+                                        </div>
+                                    </div>
+                                    {/* 調整：將 border-b 添加到此處，並將其上邊距設為 pt-2 (8px) 作為輕微分隔 */}
+                                    <div className="flex-1 grid grid-cols-3 gap-1 pt-2 border-t border-slate-100 mt-1">
+                                        {[
+                                            { label: '单月', v1: scenarioExcl.monthlyProfit, v2: scenarioIncl.monthlyProfit },
+                                            { label: '季度', v1: scenarioExcl.quarterlyProfit, v2: scenarioIncl.quarterlyProfit },
+                                            { label: '全年', v1: scenarioExcl.annualProfit, v2: scenarioIncl.annualProfit }
+                                        ].map((item, i) => (
+                                            <div key={i} className="bg-slate-50 rounded-lg p-1 flex flex-col justify-center gap-0.5 border border-slate-100">
+                                                <div className="text-xs text-slate-900 text-center mb-0.5">{item.label}</div>
+                                                <div className="text-xs text-slate-900 font-bold text-center">{item.v1.toFixed(2)}</div>
+                                                <div className="text-xs text-indigo-700 font-bold text-center">{item.v2.toFixed(2)}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* 估值 (占5份) */}
+                                <div className="col-span-5 bg-white shadow-sm border border-slate-200 rounded-r-xl rounded-l-none p-3 flex flex-col">
+                                    <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+                                        <div className="flex items-center gap-2">
+                                            <i data-lucide="pie-chart" className="w-3 h-3 text-slate-900"></i>
+                                            <span className="font-bold text-sm text-slate-900">归母净利 (亿)</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1 flex flex-col justify-center gap-4">
+                                        {/* 仅 SAF - 調整：w-[3.5rem] (56px) 實現對齊 "归" 字，並移除 PE 欄位 pl-1 */}
+                                        <div className="flex justify-start items-center ml-5 gap-3">
+                                            <div className="flex flex-col w-[3.5rem] shrink-0">
+                                                <span className="text-xs font-normal text-slate-900">仅 SAF</span>
+                                                <span className="text-sm font-bold text-slate-900">{scenarioExcl.attributable.toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex flex-col items-start w-[2.5rem] shrink-0">
+                                                <span className="text-xs font-normal text-slate-900">PE</span>
+                                                <span className="text-sm font-bold text-slate-900">{scenarioExcl.pe > 0 ? scenarioExcl.pe.toFixed(1) : '-'}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* 綜合 - 調整：w-[3.5rem] (56px) */}
+                                        <div className="flex justify-start items-center ml-5 gap-3">
+                                            <div className="flex flex-col w-[3.5rem] shrink-0">
+                                                <span className="text-xs font-normal text-indigo-700">综合</span>
+                                                <span className="text-sm font-bold text-indigo-700">{scenarioIncl.attributable.toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex flex-col items-start w-[2.5rem] shrink-0">
+                                                <span className="text-xs font-normal text-indigo-700">PE</span>
+                                                <span className="text-sm font-bold text-indigo-700">{scenarioIncl.pe > 0 ? scenarioIncl.pe.toFixed(1) : '-'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* 下部分：贡献分析 */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 shrink-0">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <i data-lucide="trending-up" className="w-4 h-4 text-black"></i>
+                                        <span className="font-bold text-base text-black">副产品贡献</span>
+                                    </div>
+                                    <span className="text-xs bg-slate-100 text-black px-1.5 py-0.5 rounded">SAF 37.3万吨 | 石脑油 4.3万吨</span>
+                                </div>
+                                <div className="relative pt-1 pb-2">
+                                    {/* 进度条背景 */}
+                                    <div className="w-full bg-slate-100 rounded-full h-5 overflow-hidden relative flex">
+                                        <div className="bg-slate-300 h-full flex items-center justify-center text-xs text-black font-bold overflow-hidden whitespace-nowrap px-1" 
+                                             style={{ width: `${(scenarioExcl.annualProfit / scenarioIncl.annualProfit) * 100}%` }}>
+                                            SAF {scenarioExcl.annualProfit.toFixed(2)}亿
+                                        </div>
+                                        <div className="bg-indigo-500 h-full flex items-center justify-center text-xs text-white font-bold overflow-hidden whitespace-nowrap px-1" 
+                                             style={{ flex: 1 }}>
+                                            +{ (scenarioIncl.annualProfit - scenarioExcl.annualProfit).toFixed(2)} 亿
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between text-xs text-black mt-1">
+                                        <span>基准: 仅SAF</span>
+                                        <span className="text-black font-bold">总计: {scenarioIncl.annualProfit.toFixed(2)} 亿</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<JiaaoSafCalculator />);
+    </script>
+</body>
+</html>

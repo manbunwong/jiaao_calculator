@@ -360,7 +360,8 @@
                     <div className="grid grid-cols-1 md:grid-cols-[18rem_1fr] gap-0 md:gap-4 p-0 md:p-4 bg-slate-50/50">
                         
                         {/* 左侧控制区 */}
-                        <div className="flex flex-col h-fit md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-slate-100">
+                        {/* 修改：h-fit 改为 h-full，让左侧卡片高度充满父容器，从而与右侧底部对齐 */}
+                        <div className="flex flex-col h-full md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-slate-100">
                             
                             <div className="px-4 py-3 border-b border-slate-200/60 shrink-0">
                                 <span className="font-semibold text-sm text-slate-900 flex items-center gap-2">
@@ -532,7 +533,8 @@
                             </div>
                             
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 shrink-0">
-                                <div className="flex items-center justify-between mb-3">
+                                {/* 修改：增加底部邊框 border-b border-slate-100 并设置 pb-3 padding，使其风格与利润概览标题一致 */}
+                                <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                                     <div className="flex items-center gap-2">
                                         <i data-lucide="trending-up" className="w-4 h-4 text-indigo-600"></i>
                                         <span className="font-bold text-sm text-slate-900">生物石脑油贡献</span>

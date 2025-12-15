@@ -3,218 +3,515 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>若雅轩防伪查询中心</title>
+    <title>嘉澳环保 SAF 利润测算器</title>
     
-    <!-- 防缓存指令 -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* --- 1. 核心配色 (与 check.html 完全一致) --- */
-        :root {
-            --bg-primary: #FFF8E7;      /* 奶油底色 */
-            --accent-red: #E74C3C;      /* 提亮红 */
-            --text-dark: #333333;       /* 深灰黑 */
-            --text-light: #666666;      /* 浅灰 */
-            --border-color: #E0E0E0;    /* 分割线 */
-            --highlight-gold: #FAD7A0;  /* 高光金 */
-            --success-green: #2ECC71;   /* 成功绿 */
-            --warning-red: #C0392B;     /* 警告红 */
-        }
-
-        /* --- 2. 基础布局 --- */
-        body {
-            background-color: var(--bg-primary);
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            margin: 0; padding: 0;
-            color: var(--text-dark);
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #e2e8f0; 
+            /* 修改：移除固定高度，允许页面滚动 */
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            justify-content: center; 
+            align-items: flex-start; /* 修改：顶部对齐，防止内容过多时被切掉 */
+            padding-top: 20px;
+            padding-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
         }
-
-        /* --- 3. 头部 Logo (与 check.html 一致) --- */
-        .header {
-            text-align: center;
-            padding: 40px 0 30px; /* 首页头部留白稍微大一点点 */
-        }
-        .header-logo-img {
-            max-height: 120px;
-            width: auto;
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+            height: 24px; 
             display: block;
-            margin: 0 auto;
-            /* 手机端白底修复 */
-            mix-blend-mode: multiply; 
-            filter: contrast(1.1);
-        }
-        .header-title {
-            color: var(--accent-red);
-            font-family: 'Songti SC', serif;
-            font-size: 24px;
-            font-weight: bold;
-            margin-top: 10px;
-            letter-spacing: 4px;
-            display: none; /* 默认隐藏文字Logo，只显示图片 */
-        }
-        .header-subtitle {
-            font-size: 12px;
-            color: var(--highlight-gold);
-            letter-spacing: 2px;
-            margin-top: 10px;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-        /* --- 4. 卡片样式 --- */
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid var(--highlight-gold);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            margin-bottom: 30px;
-            overflow: hidden;
-            padding: 30px 20px;
-            text-align: center;
-        }
-        
-        .section-header {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--text-dark);
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        /* --- 5. 输入框与按钮 --- */
-        .input-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        .input-label {
-            display: block;
-            font-size: 14px;
-            color: var(--text-light);
-            margin-bottom: 8px;
-        }
-        .code-input {
-            width: 100%;
-            padding: 15px;
-            font-size: 20px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            text-align: center;
-            outline: none;
-            transition: all 0.3s;
-            text-transform: uppercase; /* 输入自动变大写 */
-            font-family: monospace;
-            letter-spacing: 2px;
-            font-weight: bold;
-            color: var(--text-dark);
-            background: #fafafa;
-        }
-        .code-input:focus {
-            border-color: var(--accent-red);
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
-        }
-
-        .btn-search {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            background: var(--accent-red);
-            color: #fff;
-            text-align: center;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 16px;
-            border: none;
+            margin-top: 4px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
-            transition: transform 0.1s;
         }
-        .btn-search:active {
-            transform: scale(0.98);
-            box-shadow: 0 2px 5px rgba(231, 76, 60, 0.2);
+        input[type=range]:focus {
+            outline: none;
         }
-
-        /* --- 6. 底部 --- */
-        .footer {
-            text-align: center; font-size: 12px; color: #999;
-            margin-top: auto; padding-top: 20px;
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #4f46e5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            margin-top: -8px; 
+            transition: transform 0.1s ease;
         }
-        .tips {
-            font-size: 12px; color: #999; margin-top: 15px; line-height: 1.5;
+        input[type=range]:active::-webkit-slider-thumb {
+            transform: scale(1.1);
+            background: #eef2ff;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield; 
         }
     </style>
 </head>
 <body>
+    <div id="root" class="w-full flex justify-center px-4"></div>
 
-<div class="container">
-    <!-- 1. 头部 Logo (与 check.html 保持一致) -->
-    <div class="header">
-        <img src="./logo.png?v=1" alt="若雅轩" class="header-logo-img" onerror="this.style.display='none'; document.getElementById('text-logo').style.display='block'">
-        <h1 id="text-logo" class="header-title">若雅轩</h1>
-        <div class="header-subtitle">OFFICIAL VERIFICATION</div>
-    </div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-    <!-- 2. 查询卡片 -->
-    <div class="card">
-        <div class="section-header">防伪查询</div>
-        
-        <div class="input-group">
-            <label class="input-label">请输入产品防伪编码：</label>
-            <input type="text" id="manual-code" class="code-input" placeholder="例如：T8K92">
-        </div>
-        
-        <button onclick="startQuery()" class="btn-search">立即验证</button>
-        
-        <div class="tips">
-            * 编码不区分大小写，系统自动识别
-        </div>
-    </div>
+        const DEFAULTS = {
+            safVolume: 37.3, 
+            safPriceUsd: 2100,
+            ucoPriceRmb: 6300,
+            naphthaPriceRmb: 6000,
+            exchangeRate: 7.1,
+            yieldRate: 74.6,
+            processCost: 2500,
+            taxFactor: 1.07,
+            equityRatio: 53.55,
+            marketCap: 65.30,
+            sharePrice: 85.00
+        };
 
-    <!-- 3. 底部 (与 check.html 保持一致) -->
-    <div class="footer">
-        勐海若雅轩茶叶有限公司<br>
-        Menghai Ruoyaxuan Tea Industry Co., Ltd.
-    </div>
-</div>
+        const TOTAL_SHARES = 0.76825886; 
+        const NAPHTHA_RATIO_CONSTANT = 4.3 / 37.3;
 
-<script>
-    function startQuery() {
-        var inputVal = document.getElementById('manual-code').value;
-        var code = inputVal.trim();
-        
-        if (code === "") {
-            // 用原生弹窗提示，简单直接
-            alert("请输入防伪编码");
-            return;
-        }
-        
-        // 强制转大写
-        code = code.toUpperCase();
-        
-        // 跳转
-        window.location.href = "check.html?id=" + code;
-    }
+        // 通用控制组件
+        const ControlItem = ({ label, subLabel, value, onChange, min, max, step, showButtons = true, unitPrefix = "" }) => {
+            
+            const handleInputChange = (e) => {
+                onChange(e.target.value);
+            };
 
-    // 回车键支持
-    document.getElementById('manual-code').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            startQuery();
-        }
-    });
-</script>
+            const handleButtonChange = (delta) => {
+                const current = Number(value) || 0;
+                let next = current + delta;
+                if (min !== undefined && next < min) next = min;
+                if (max !== undefined && next > max) next = max;
+                if (step < 1) next = parseFloat(next.toFixed(2));
+                onChange(next);
+            };
 
+            const handleSliderChange = (e) => {
+                onChange(Number(e.target.value));
+            }
+
+            const handleBlur = () => {
+                if (value === "" || value === "-" || value === ".") {
+                    onChange(min !== undefined ? min : 0);
+                    return;
+                }
+                
+                let num = parseFloat(value);
+                if (isNaN(num)) num = 0;
+                
+                if (min !== undefined && num < min) num = min;
+                if (max !== undefined && num > max) num = max;
+                
+                onChange(num);
+            };
+
+            return (
+                <div className="space-y-1 pt-2 first:pt-0 first:border-none border-t border-slate-100">
+                    <div className="flex justify-between items-center">
+                        <div className="flex flex-col">
+                            <label className="text-xs font-bold text-indigo-800">{label}</label>
+                            {subLabel && <span className="text-xs text-slate-500 font-medium">{subLabel}</span>}
+                        </div>
+                        <div className="flex items-center gap-1 scale-90 origin-right">
+                            {showButtons && (
+                                <button 
+                                    onClick={() => handleButtonChange(-step * 10)} 
+                                    className="w-6 h-6 flex items-center justify-center bg-slate-100 rounded hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-bold transition-colors"
+                                >-</button>
+                            )}
+                            <div className="relative">
+                                {unitPrefix && <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">{unitPrefix}</span>}
+                                <input 
+                                    type="number" 
+                                    value={value} 
+                                    onChange={handleInputChange}
+                                    onBlur={handleBlur}
+                                    className={`w-14 text-center text-sm font-bold text-indigo-600 bg-indigo-50 rounded outline-none py-1 focus:ring-2 focus:ring-indigo-200 transition-all ${unitPrefix ? 'pl-3' : ''}`}
+                                />
+                            </div>
+                            {showButtons && (
+                                <button 
+                                    onClick={() => handleButtonChange(step * 10)} 
+                                    className="w-6 h-6 flex items-center justify-center bg-slate-100 rounded hover:bg-slate-200 active:bg-slate-300 text-slate-600 font-bold transition-colors"
+                                >+</button>
+                            )}
+                        </div>
+                    </div>
+                    <input 
+                        type="range" 
+                        min={min} 
+                        max={max} 
+                        step={step} 
+                        value={Number(value) || 0} 
+                        onChange={handleSliderChange} 
+                        className="w-full active:cursor-grabbing"
+                    />
+                </div>
+            );
+        };
+
+        const JiaaoSafCalculator = () => {
+            const [safVolume, setSafVolume] = useState(DEFAULTS.safVolume); 
+            const [safPriceUsd, setSafPriceUsd] = useState(DEFAULTS.safPriceUsd); 
+            const [ucoPriceRmb, setUcoPriceRmb] = useState(DEFAULTS.ucoPriceRmb); 
+            const [naphthaPriceRmb, setNaphthaPriceRmb] = useState(DEFAULTS.naphthaPriceRmb); 
+            const [exchangeRate, setExchangeRate] = useState(DEFAULTS.exchangeRate); 
+            const [yieldRate, setYieldRate] = useState(DEFAULTS.yieldRate); 
+            const [processCost, setProcessCost] = useState(DEFAULTS.processCost); 
+            const [taxFactor, setTaxFactor] = useState(DEFAULTS.taxFactor); 
+            const [equityRatio, setEquityRatio] = useState(DEFAULTS.equityRatio); 
+            
+            const [marketCap, setMarketCap] = useState(DEFAULTS.marketCap); 
+            const [sharePrice, setSharePrice] = useState(DEFAULTS.sharePrice); 
+
+            const naphthaVolume = (Number(safVolume) || 0) * NAPHTHA_RATIO_CONSTANT;
+
+            const [commonData, setCommonData] = useState({ safRevenue: 0, naphthaCredit: 0, grossCost: 0, netCost: 0 });
+            const [scenarioExcl, setScenarioExcl] = useState({ profitPerTon: 0, margin: 0, monthlyProfit: 0, quarterlyProfit: 0, annualProfit: 0, attributable: 0, pe: 0 });
+            const [scenarioIncl, setScenarioIncl] = useState({ profitPerTon: 0, margin: 0, monthlyProfit: 0, quarterlyProfit: 0, annualProfit: 0, attributable: 0, pe: 0 });
+
+            const handleReset = () => {
+                setSafVolume(DEFAULTS.safVolume);
+                setSafPriceUsd(DEFAULTS.safPriceUsd);
+                setUcoPriceRmb(DEFAULTS.ucoPriceRmb);
+                setNaphthaPriceRmb(DEFAULTS.naphthaPriceRmb);
+                setExchangeRate(DEFAULTS.exchangeRate);
+                setYieldRate(DEFAULTS.yieldRate);
+                setProcessCost(DEFAULTS.processCost);
+                setTaxFactor(DEFAULTS.taxFactor);
+                setEquityRatio(DEFAULTS.equityRatio);
+                setMarketCap(DEFAULTS.marketCap);
+                setSharePrice(DEFAULTS.sharePrice);
+            };
+
+            const handleMarketCapChange = (val) => { 
+                setMarketCap(val); 
+                const num = parseFloat(val);
+                if (!isNaN(num)) {
+                    setSharePrice(num / TOTAL_SHARES);
+                }
+            };
+            const handleSharePriceChange = (val) => { 
+                setSharePrice(val);
+                const num = parseFloat(val);
+                if (!isNaN(num)) {
+                    setMarketCap(num * TOTAL_SHARES); 
+                }
+            };
+            
+            useEffect(() => { 
+                if (window.lucide) window.lucide.createIcons(); 
+            });
+
+            useEffect(() => {
+                const sVol = Number(safVolume) || 0;
+                const sPrice = Number(safPriceUsd) || 0;
+                const exRate = Number(exchangeRate) || 0;
+                const ucoPrice = Number(ucoPriceRmb) || 0;
+                const napPrice = Number(naphthaPriceRmb) || 0;
+                const yRate = Number(yieldRate) || 0.1; 
+                const pCost = Number(processCost) || 0;
+                const tFactor = Number(taxFactor) || 1;
+                const eqRatio = Number(equityRatio) || 0;
+                const mCap = Number(marketCap) || 0;
+
+                const safRevenue = sPrice * exRate;
+                const naphthaCredit = napPrice * NAPHTHA_RATIO_CONSTANT; 
+                const unitConsumption = 1 / (yRate / 100);
+                
+                const rawMaterialCost = ucoPrice * unitConsumption;
+                const baseCost = rawMaterialCost + pCost; 
+                const totalGrossCost = baseCost * tFactor; 
+                const netCost = totalGrossCost - naphthaCredit;
+
+                setCommonData({ safRevenue, naphthaCredit, grossCost: totalGrossCost, netCost: netCost });
+
+                const calculateScenario = (cost) => {
+                    const profit = safRevenue - cost; 
+                    const margin = safRevenue !== 0 ? (profit / safRevenue) * 100 : 0; 
+                    const annual = (profit * sVol * 10000) / 100000000;
+                    const attr = annual * (eqRatio / 100); 
+                    const pe = attr > 0 ? mCap / attr : 0; 
+                    return { profitPerTon: profit, margin, monthlyProfit: annual/12, quarterlyProfit: annual/4, annualProfit: annual, attributable: attr, pe };
+                };
+
+                setScenarioExcl(calculateScenario(totalGrossCost)); 
+                setScenarioIncl(calculateScenario(netCost)); 
+
+            }, [safVolume, safPriceUsd, ucoPriceRmb, naphthaPriceRmb, exchangeRate, yieldRate, processCost, taxFactor, equityRatio, marketCap]);
+
+            const fmt = (num, fixed = 0) => num.toLocaleString('zh-CN', { minimumFractionDigits: fixed, maximumFractionDigits: fixed });
+
+            const SimpleInput = ({ value, onChange, className }) => (
+                <input 
+                    type="number" 
+                    value={value} 
+                    onChange={(e) => onChange(e.target.value)}
+                    onBlur={(e) => {
+                        let val = parseFloat(e.target.value);
+                        if (isNaN(val) || val < 0) onChange(0);
+                        else onChange(val); 
+                    }}
+                    className={className}
+                />
+            );
+
+            // 修改布局：移除固定高度限制 (h-[95vh]) 和内部滚动 (overflow-y-auto)，让容器高度自适应
+            return (
+                <div className="w-full md:max-w-[710px] flex flex-col bg-slate-50 text-slate-900 md:shadow-2xl md:rounded-2xl border-none md:border border-slate-300 h-auto">
+                    
+                    <div className="bg-white shadow-sm border-b border-slate-200 shrink-0 z-20 md:rounded-t-2xl">
+                        <div className="px-4 py-3 flex items-center justify-between">
+                            <h1 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="calculator" className="w-4 h-4 text-indigo-600"></i>
+                                嘉澳环保 SAF 利润测算器
+                            </h1>
+                            
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={handleReset}
+                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors flex items-center gap-1 mr-1"
+                                    title="恢复默认值"
+                                >
+                                    <i data-lucide="rotate-ccw" className="w-3.5 h-3.5"></i>
+                                    <span className="text-xs font-medium">重置</span>
+                                </button>
+
+                                <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                                    <div className="flex items-center gap-1">
+                                        <label className="text-xs text-indigo-600 font-medium">股价</label>
+                                        <input type="number" value={typeof sharePrice === 'number' ? sharePrice.toFixed(2) : sharePrice} onChange={(e) => handleSharePriceChange(e.target.value)}
+                                            className="w-14 text-right font-bold text-sm text-slate-900 bg-transparent outline-none border-b border-transparent focus:border-indigo-500 transition-colors"/>
+                                    </div>
+                                    <div className="text-slate-300 mx-1">|</div>
+                                    <div className="flex items-center gap-1">
+                                        <label className="text-xs text-indigo-600 font-medium">市值</label>
+                                        <input type="number" value={typeof marketCap === 'number' ? marketCap.toFixed(2) : marketCap} onChange={(e) => handleMarketCapChange(e.target.value)}
+                                            className="w-12 text-right font-bold text-sm text-slate-900 bg-transparent outline-none border-b border-transparent focus:border-indigo-500 transition-colors"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-[17rem_1fr] gap-2 p-2">
+                        
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-fit">
+                            
+                            <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 shrink-0 rounded-t-xl">
+                                <span className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                                    <i data-lucide="settings" className="w-3 h-3 text-slate-900"></i> 核心变量
+                                </span>
+                            </div>
+
+                            <div className="p-3 flex flex-col gap-3">
+                                <ControlItem 
+                                    label="SAF 产量 (万吨)" 
+                                    subLabel="产能范围: 0-74.8万吨"
+                                    value={safVolume} 
+                                    onChange={setSafVolume} 
+                                    min={0} max={74.8} step={0.1} 
+                                />
+
+                                <ControlItem 
+                                    label="SAF 出口价 ($/吨)" 
+                                    subLabel={`¥/吨: ${fmt(commonData.safRevenue)}`}
+                                    value={safPriceUsd} 
+                                    onChange={setSafPriceUsd} 
+                                    min={1500} max={3000} step={10} 
+                                />
+
+                                <ControlItem 
+                                    label="UCO 采购价 (¥/吨)" 
+                                    value={ucoPriceRmb} 
+                                    onChange={setUcoPriceRmb} 
+                                    min={4000} max={9000} step={10} 
+                                />
+
+                                <ControlItem 
+                                    label="生物石脑油 (¥/吨)" 
+                                    subLabel={`产量: ${naphthaVolume.toFixed(2)}万吨`}
+                                    value={naphthaPriceRmb} 
+                                    onChange={setNaphthaPriceRmb} 
+                                    min={4000} max={9000} step={100} 
+                                />
+
+                                <div className="grid grid-cols-1 gap-2 pt-3 border-t border-slate-100 content-start">
+                                    <div className="flex items-center justify-between group">
+                                        <label className="text-xs text-slate-700 font-medium group-hover:text-indigo-600 transition-colors">汇率 (USD/RMB)</label>
+                                        <SimpleInput value={exchangeRate} onChange={setExchangeRate} 
+                                            className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white focus:ring-2 focus:ring-indigo-100 transition-all"/>
+                                    </div>
+                                    <div className="flex items-center justify-between group">
+                                        <label className="text-xs text-slate-700 font-medium group-hover:text-indigo-600 transition-colors">收率 (%)</label>
+                                        <SimpleInput value={yieldRate} onChange={setYieldRate} 
+                                            className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white focus:ring-2 focus:ring-indigo-100 transition-all"/>
+                                    </div>
+                                    <div className="flex items-center justify-between group">
+                                        <label className="text-xs text-slate-700 font-medium group-hover:text-indigo-600 transition-colors">加工成本 (¥/吨)</label>
+                                        <SimpleInput value={processCost} onChange={setProcessCost} 
+                                            className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white focus:ring-2 focus:ring-indigo-100 transition-all"/>
+                                    </div>
+                                    <div className="flex items-center justify-between group">
+                                        <label className="text-xs text-slate-700 font-medium group-hover:text-indigo-600 transition-colors">
+                                            综合税率 
+                                        </label>
+                                        <SimpleInput value={taxFactor} onChange={setTaxFactor} 
+                                            className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white focus:ring-2 focus:ring-indigo-100 transition-all"/>
+                                    </div>
+                                    <div className="flex items-center justify-between mb-1 group">
+                                        <label className="text-xs text-slate-700 font-medium group-hover:text-indigo-600 transition-colors">
+                                            权益比例 (%)
+                                        </label>
+                                        <SimpleInput value={equityRatio} onChange={setEquityRatio} 
+                                            className="w-24 px-2 py-1 text-xs text-center border border-slate-200 rounded font-medium focus:border-indigo-500 outline-none text-slate-900 bg-white focus:ring-2 focus:ring-indigo-100 transition-all"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden shrink-0">
+                                <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex justify-between items-center">
+                                    <span className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                                        <i data-lucide="arrow-right-left" className="w-3 h-3 text-slate-900"></i> 单吨模型敏感度 (¥/吨)
+                                    </span>
+                                </div>
+                                <table className="w-full text-xs text-left">
+                                    <thead className="bg-slate-50/50 text-slate-900 border-b border-slate-100">
+                                        <tr>
+                                            <th className="pl-8 pr-3 py-2 font-medium w-[25%]">指标</th>
+                                            <th className="px-3 py-2 font-bold text-slate-900 text-center w-[33%]">仅SAF</th>
+                                            <th className="px-3 py-2 font-bold text-indigo-700 text-center w-[42%]">综合 <span className="font-bold text-xs text-indigo-700">(含石脑油抵扣)</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        <tr>
+                                            <td className="pl-8 pr-3 py-1.5 text-slate-900">SAF 售价</td>
+                                            <td className="px-3 py-1.5 font-bold text-slate-900 text-center">{fmt(commonData.safRevenue)}</td>
+                                            <td className="px-3 py-1.5 font-bold text-indigo-700 text-center">{fmt(commonData.safRevenue)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="pl-8 pr-3 py-1.5 text-slate-900">单吨成本</td>
+                                            <td className="px-3 py-1.5 font-bold text-slate-900 text-center">{fmt(commonData.grossCost)}</td>
+                                            <td className="px-3 py-1.5 font-bold text-indigo-700 text-center">{fmt(commonData.netCost)} <span className="text-xs font-bold text-indigo-700">(抵扣 -{fmt(commonData.naphthaCredit)})</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td className="pl-8 pr-3 py-1.5 text-slate-900">单吨毛利</td>
+                                            <td className="px-3 py-1.5 font-bold text-slate-900 text-center">{fmt(scenarioExcl.profitPerTon)}</td>
+                                            <td className="px-3 py-1.5 font-bold text-indigo-700 text-center">{fmt(scenarioIncl.profitPerTon)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="pl-8 pr-3 py-1.5 text-slate-900">毛利率</td>
+                                            <td className="px-3 py-1.5 font-bold text-slate-900 text-center">{scenarioExcl.margin.toFixed(1)}%</td>
+                                            <td className="px-3 py-1.5 font-bold text-indigo-700 text-center">{scenarioIncl.margin.toFixed(1)}%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex flex-col">
+                                
+                                <div className="grid grid-cols-5 gap-0 mb-3 border-b border-slate-100 pb-2">
+                                    
+                                    <div className="col-span-3 flex items-center gap-2 pr-4 border-r border-slate-200">
+                                        <i data-lucide="bar-chart-3" className="w-4 h-4 text-slate-900"></i>
+                                        <span className="font-bold text-sm text-slate-900">利润概览 (亿)</span>
+                                    </div>
+                                    
+                                    <div className="col-span-2 flex items-center justify-start pl-4">
+                                        <span className="font-bold text-sm text-slate-900 leading-none">全年归母</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-5 gap-0 pt-1 border-t border-slate-100/0"> 
+                                    <div className="flex flex-col text-center border-r border-slate-100">
+                                        <div className="text-xs text-slate-700 mb-0.5 font-medium border-b border-slate-100 pb-1">单月</div>
+                                        <div className="text-sm text-slate-800 font-bold">{scenarioExcl.monthlyProfit.toFixed(2)}</div>
+                                        <div className="text-sm text-indigo-600 font-bold">{scenarioIncl.monthlyProfit.toFixed(2)}</div>
+                                    </div>
+
+                                    <div className="flex flex-col text-center border-r border-slate-100">
+                                        <div className="text-xs text-slate-700 mb-0.5 font-medium border-b border-slate-100 pb-1">季度</div>
+                                        <div className="text-sm text-slate-800 font-bold">{scenarioExcl.quarterlyProfit.toFixed(2)}</div>
+                                        <div className="text-sm text-indigo-600 font-bold">{scenarioIncl.quarterlyProfit.toFixed(2)}</div>
+                                    </div>
+
+                                    <div className="flex flex-col text-center border-r border-slate-200">
+                                        <div className="text-xs text-slate-700 mb-0.5 font-medium border-b border-slate-100 pb-1">全年</div>
+                                        <div className="text-sm text-slate-800 font-bold">{scenarioExcl.annualProfit.toFixed(2)}</div>
+                                        <div className="text-sm text-indigo-600 font-bold">{scenarioIncl.annualProfit.toFixed(2)}</div>
+                                    </div>
+
+                                    <div className="flex flex-col text-center border-r border-slate-100">
+                                        <div className="text-xs text-slate-700 mb-0.5 font-medium border-b border-slate-100 pb-1">归母利润 (亿)</div>
+                                        <div className="text-sm text-slate-800 font-bold">{scenarioExcl.attributable.toFixed(2)}</div>
+                                        <div className="text-sm text-indigo-600 font-bold">{scenarioIncl.attributable.toFixed(2)}</div>
+                                    </div>
+
+                                    <div className="flex flex-col text-center">
+                                        <div className="text-xs text-slate-700 mb-0.5 font-medium border-b border-slate-100 pb-1">PE (倍)</div>
+                                        <div className="text-sm text-slate-800 font-bold">{scenarioExcl.pe > 0 && isFinite(scenarioExcl.pe) ? scenarioExcl.pe.toFixed(2) : '-'}</div>
+                                        <div className="text-sm text-indigo-600 font-bold">{scenarioIncl.pe > 0 && isFinite(scenarioIncl.pe) ? scenarioIncl.pe.toFixed(2) : '-'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 shrink-0">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <i data-lucide="trending-up" className="w-4 h-4 text-black"></i>
+                                        <span className="font-bold text-sm text-black">副产品贡献</span>
+                                    </div>
+                                    <span className="text-xs bg-slate-100 text-black px-1.5 py-0.5 rounded">SAF {Number(safVolume).toFixed(1)}万吨 | 石脑油 {naphthaVolume.toFixed(2)}万吨</span>
+                                </div>
+                                <div className="relative pt-1 pb-2">
+                                    <div className="w-full bg-slate-100 rounded-full h-5 overflow-hidden relative flex">
+                                        <div className="bg-slate-300 h-full flex items-center justify-center text-xs text-black font-bold overflow-hidden whitespace-nowrap px-1" 
+                                             style={{ width: `${(scenarioExcl.annualProfit / scenarioIncl.annualProfit) * 100}%` }}>
+                                            SAF利润 {scenarioExcl.annualProfit.toFixed(2)}亿
+                                        </div>
+                                        <div className="bg-indigo-500 h-full flex items-center justify-center text-xs text-white font-bold overflow-hidden whitespace-nowrap px-1" 
+                                             style={{ flex: 1 }}>
+                                            +{ (scenarioIncl.annualProfit - scenarioExcl.annualProfit).toFixed(2)} 亿
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between text-xs text-black mt-1">
+                                        <span>基准: 仅SAF</span>
+                                        <span className="text-black font-bold">总计: {scenarioIncl.annualProfit.toFixed(2)} 亿</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<JiaaoSafCalculator />);
+    </script>
 </body>
 </html>

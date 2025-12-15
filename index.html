@@ -360,8 +360,8 @@
                     <div className="grid grid-cols-1 md:grid-cols-[18rem_1fr] gap-0 md:gap-4 p-0 md:p-4 bg-slate-50/50">
                         
                         {/* 左侧控制区 */}
-                        {/* 修改：h-fit 改为 h-full，让左侧卡片高度充满父容器，从而与右侧底部对齐 */}
-                        <div className="flex flex-col h-full md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-slate-100">
+                        {/* 修改：改回 h-fit，还原上一版本，不强制高度，让内容决定 */}
+                        <div className="flex flex-col h-fit md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-slate-100">
                             
                             <div className="px-4 py-3 border-b border-slate-200/60 shrink-0">
                                 <span className="font-semibold text-sm text-slate-900 flex items-center gap-2">
@@ -440,7 +440,8 @@
                         </div>
 
                         {/* 右侧结果区 */}
-                        <div className="flex flex-col gap-3 p-4 md:p-0">
+                        {/* 修改：右侧区域容器增加 h-full，让 flex-1 的子元素能生效 */}
+                        <div className="flex flex-col gap-3 p-4 md:p-0 h-full">
                             
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden shrink-0">
                                 <div className="bg-slate-50/50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
@@ -487,7 +488,7 @@
                                 </table>
                             </div>
 
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-col">
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-col shrink-0">
                                 <div className="grid grid-cols-5 gap-0 mb-4 border-b border-slate-100 pb-3">
                                     <div className="col-span-3 flex items-center gap-2 pr-4 border-r border-slate-100">
                                         <i data-lucide="bar-chart-3" className="w-4 h-4 text-slate-900"></i>
@@ -500,39 +501,49 @@
                                 
                                 <div className="grid grid-cols-5 gap-0"> 
                                     <div className="flex flex-col text-center border-r border-slate-100/60">
-                                        {/* 修改：标题、数字字体同“单月” (text-xs font-medium) */}
-                                        <div className="text-xs text-slate-900 mb-1 font-medium uppercase">单月</div>
-                                        <div className="text-xs font-medium text-slate-900 mb-0.5">{scenarioExcl.monthlyProfit.toFixed(2)}</div>
+                                        {/* 修改：间距加大 mb-1 -> mb-2 */}
+                                        <div className="text-xs text-slate-900 mb-2 font-medium uppercase">单月</div>
+                                        {/* 修改：间距加大 mb-0.5 -> mb-1 */}
+                                        <div className="text-xs font-medium text-slate-900 mb-1">{scenarioExcl.monthlyProfit.toFixed(2)}</div>
                                         <div className="text-xs font-medium text-indigo-600">{scenarioIncl.monthlyProfit.toFixed(2)}</div>
                                     </div>
 
                                     <div className="flex flex-col text-center border-r border-slate-100/60">
-                                        <div className="text-xs text-slate-900 mb-1 font-medium uppercase">季度</div>
-                                        <div className="text-xs font-medium text-slate-900 mb-0.5">{scenarioExcl.quarterlyProfit.toFixed(2)}</div>
+                                        {/* 修改：间距加大 mb-1 -> mb-2 */}
+                                        <div className="text-xs text-slate-900 mb-2 font-medium uppercase">季度</div>
+                                        {/* 修改：间距加大 mb-0.5 -> mb-1 */}
+                                        <div className="text-xs font-medium text-slate-900 mb-1">{scenarioExcl.quarterlyProfit.toFixed(2)}</div>
                                         <div className="text-xs font-medium text-indigo-600">{scenarioIncl.quarterlyProfit.toFixed(2)}</div>
                                     </div>
 
                                     <div className="flex flex-col text-center border-r border-slate-100">
-                                        <div className="text-xs text-slate-900 mb-1 font-medium uppercase">全年</div>
-                                        <div className="text-xs font-medium text-slate-900 mb-0.5">{scenarioExcl.annualProfit.toFixed(2)}</div>
+                                        {/* 修改：间距加大 mb-1 -> mb-2 */}
+                                        <div className="text-xs text-slate-900 mb-2 font-medium uppercase">全年</div>
+                                        {/* 修改：间距加大 mb-0.5 -> mb-1 */}
+                                        <div className="text-xs font-medium text-slate-900 mb-1">{scenarioExcl.annualProfit.toFixed(2)}</div>
                                         <div className="text-xs font-medium text-indigo-600">{scenarioIncl.annualProfit.toFixed(2)}</div>
                                     </div>
 
                                     <div className="flex flex-col text-center border-r border-slate-100/60">
-                                        <div className="text-xs text-slate-900 mb-1 font-bold uppercase">归母</div>
-                                        <div className="text-xs font-medium text-slate-900 mb-0.5">{scenarioExcl.attributable.toFixed(2)}</div>
+                                        {/* 修改：间距加大 mb-1 -> mb-2 */}
+                                        <div className="text-xs text-slate-900 mb-2 font-bold uppercase">归母</div>
+                                        {/* 修改：间距加大 mb-0.5 -> mb-1 */}
+                                        <div className="text-xs font-medium text-slate-900 mb-1">{scenarioExcl.attributable.toFixed(2)}</div>
                                         <div className="text-xs font-medium text-indigo-600">{scenarioIncl.attributable.toFixed(2)}</div>
                                     </div>
 
                                     <div className="flex flex-col text-center">
-                                        <div className="text-xs text-slate-900 mb-1 font-bold uppercase">PE</div>
-                                        <div className="text-xs font-medium text-slate-900 mb-0.5">{scenarioExcl.pe > 0 && isFinite(scenarioExcl.pe) ? scenarioExcl.pe.toFixed(1) : '-'}</div>
+                                        {/* 修改：间距加大 mb-1 -> mb-2 */}
+                                        <div className="text-xs text-slate-900 mb-2 font-bold uppercase">PE</div>
+                                        {/* 修改：间距加大 mb-0.5 -> mb-1 */}
+                                        <div className="text-xs font-medium text-slate-900 mb-1">{scenarioExcl.pe > 0 && isFinite(scenarioExcl.pe) ? scenarioExcl.pe.toFixed(1) : '-'}</div>
                                         <div className="text-xs font-medium text-indigo-600">{scenarioIncl.pe > 0 && isFinite(scenarioIncl.pe) ? scenarioIncl.pe.toFixed(1) : '-'}</div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 shrink-0">
+                            {/* 修改：增加 flex-1，使这个卡片自动拉伸填满剩余高度，实现底部对齐 */}
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex-1 flex flex-col justify-center">
                                 {/* 修改：增加底部邊框 border-b border-slate-100 并设置 pb-3 padding，使其风格与利润概览标题一致 */}
                                 <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                                     <div className="flex items-center gap-2">

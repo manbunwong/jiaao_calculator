@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="color-scheme" content="light dark">
+    <title>嘉澳环保 SAF 利润测算器</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'media', // 根据系统偏好自动切换
+            theme: {
+                extend: {
+                    colors: {
+                        // 定义 iOS 风格的深色背景色
+                        ios: {
+                            bg: '#000000',
+                            card: '#1c1c1e',
+                            elevated: '#2c2c2e',
+                            border: '#38383a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* CSS 变量定义颜色，用于非 Tailwind 属性 (如滑块轨道) */
+        :root {
+            --bg-body: #f2f2f7;
+            --track-color: #e5e5ea;
+            --thumb-border: rgba(0,0,0,0.1);
+            --thumb-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #000000;
+                --track-color: #3a3a3c; /* iOS 深色模式轨道灰 */
+                --thumb-border: rgba(255,255,255,0.15);
+                --thumb-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            }
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body); 
+            min-height: 100vh;
+            display: flex;
+            justify-content: center; 
+            align-items: flex-start;
+            padding: max(20px, env(safe-area-inset-top)) env(safe-area-inset-right) max(20px, env(safe-area-inset-bottom)) env(safe-area-inset-left);
+            -webkit-overflow-scrolling: touch;
+            -webkit-user-select: none;
+            user-select: none;
+            transition: background-color 0.3s;
+        }
+        
+        /* 移除默认样式 */
+        input { -webkit-appearance: none; border-radius: 0; }
+        input[type="number"], input[type="text"] { -webkit-user-select: text; user-select: text; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        /* 自定义滑块 - 适配深色模式 */
+        input[type=range] { -webkit-appearance: none; background: transparent; height: 20px; display: block; margin-top: 2px; cursor: pointer; }
+        input[type=range]:focus { outline: none; }
+        
+        /* 使用 CSS 变量控制轨道颜色 */
+        input[type=range]::-webkit-slider-runnable-track { 
+            width: 100%; height: 3px; cursor: pointer; background: var(--track-color); border-radius: 2px; 
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #ffffff;
+            border: 0.5px solid var(--thumb-border); 
+            box-shadow: var(--thumb-shadow);
+            margin-top: -6.5px; transition: transform 0.1s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        
+        /* 深色模式下滑块圆点稍微暗一点点或保持白色突出，iOS通常保持浅色 */
+        @media (prefers-color-scheme: dark) {
+            input[type=range]::-webkit-slider-thumb {
+                background: #e9e9eb; 
+            }
+        }
+
+        input[type=range]:active::-webkit-slider-thumb { transform: scale(1.1); }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body>
+    <div id="root" class="w-full flex justify-center"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const CONFIG = {
+            defaults: { safVolume: 37.3, safPriceUsd: 2100, ucoPriceRmb: 6300, naphthaPriceRmb: 6000, exchangeRate: 7.1, yieldRate: 74.6, processCost: 2500, taxFactor: 1.07, equityRatio: 53.55, marketCap: 65.30, sharePrice: 85.00 },
+            totalShares: 0.76825886,
+            naphthaRatio: 4.3 / 37.3
+        };
+
+        const ControlItem = ({ label, subLabel, value, onChange, min, max, step, showButtons = true, unitPrefix = "" }) => {
+            const update = (v) => {
+                let n = parseFloat(v);
+                if (isNaN(n)) n = 0;
+                if (min !== undefined && n < min) n = min;
+                if (max !== undefined && n > max) n = max;
+                onChange(step < 1 ? parseFloat(n.toFixed(2)) : n);
+            };
+            return (
+                <div className="space-y-1 pt-2 first:pt-0 first:border-none border-t border-slate-100/80 dark:border-white/10">
+                    <div className="flex justify-between items-center">
+                        <div className="flex flex-col">
+                            <label className="text-xs font-semibold text-slate-900 dark:text-white tracking-tight">{label}</label>
+                            {subLabel && <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">{subLabel}</span>}
+                        </div>
+                        <div className="flex items-center gap-1 scale-95 origin-right">
+                            {showButtons && <button onClick={() => update(Number(value) - step * 10)} className="w-7 h-7 flex items-center justify-center bg-slate-100 dark:bg-ios-elevated rounded-lg active:bg-slate-200 dark:active:bg-[#3a3a3c] text-slate-900 dark:text-white text-sm font-semibold transition-colors touch-manipulation">-</button>}
+                            <div className="relative">
+                                {unitPrefix && <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-slate-900 dark:text-white font-medium">{unitPrefix}</span>}
+                                <input type="number" value={value} onChange={e => onChange(e.target.value)} onBlur={e => update(e.target.value)} className={`w-16 text-center text-sm font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-500/15 rounded-lg outline-none py-1 focus:bg-indigo-50 dark:focus:bg-indigo-500/25 focus:ring-2 focus:ring-indigo-500/20 transition-all ${unitPrefix ? 'pl-3' : ''}`} />
+                            </div>
+                            {showButtons && <button onClick={() => update(Number(value) + step * 10)} className="w-7 h-7 flex items-center justify-center bg-slate-100 dark:bg-ios-elevated rounded-lg active:bg-slate-200 dark:active:bg-[#3a3a3c] text-slate-900 dark:text-white text-sm font-semibold transition-colors touch-manipulation">+</button>}
+                        </div>
+                    </div>
+                    <input type="range" min={min} max={max} step={step} value={Number(value) || 0} onChange={e => onChange(Number(e.target.value))} className="w-full touch-pan-y" />
+                </div>
+            );
+        };
+
+        const SimpleInput = ({ value, onChange, label }) => (
+            <div className="flex items-center justify-between">
+                <label className="text-xs text-slate-900 dark:text-slate-200 font-medium transition-colors">{label}</label>
+                <input type="number" value={value} onChange={e => onChange(e.target.value)} onBlur={e => {
+                    let v = parseFloat(e.target.value); onChange(isNaN(v) || v < 0 ? 0 : v);
+                }} className="w-20 px-2 py-0.5 text-sm text-center border border-slate-200/80 dark:border-white/10 rounded-lg font-semibold focus:border-indigo-500 outline-none text-slate-900 dark:text-white bg-white dark:bg-ios-elevated focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all"/>
+            </div>
+        );
+
+        const JiaaoSafCalculator = () => {
+            const [p, setP] = useState(CONFIG.defaults);
+            const upd = (k, v) => setP(s => ({ ...s, [k]: v }));
+            
+            const handleReset = () => setP(CONFIG.defaults);
+            const syncMarket = (v) => { upd('marketCap', v); if (!isNaN(v)) upd('sharePrice', v / CONFIG.totalShares); };
+            const syncShare = (v) => { upd('sharePrice', v); if (!isNaN(v)) upd('marketCap', v * CONFIG.totalShares); };
+
+            const naphthaVol = (Number(p.safVolume) || 0) * CONFIG.naphthaRatio;
+            
+            const res = useMemo(() => {
+                const sVol = Number(p.safVolume) || 0;
+                const rev = (Number(p.safPriceUsd) || 0) * (Number(p.exchangeRate) || 0);
+                const grossCost = ((Number(p.ucoPriceRmb) || 0) * (1 / ((Number(p.yieldRate)||0.1)/100)) + (Number(p.processCost) || 0)) * (Number(p.taxFactor) || 1);
+                const credit = (Number(p.naphthaPriceRmb) || 0) * CONFIG.naphthaRatio;
+                
+                const calc = (cost) => {
+                    const profit = rev - cost;
+                    const annual = (profit * sVol * 10000) / 1e8;
+                    const attr = annual * ((Number(p.equityRatio)||0)/100);
+                    return { profit, margin: rev ? (profit/rev)*100 : 0, m: annual/12, q: annual/4, y: annual, attr, pe: attr > 0 ? (Number(p.marketCap)||0)/attr : 0 };
+                };
+                return { rev, grossCost, netCost: grossCost - credit, credit, excl: calc(grossCost), incl: calc(grossCost - credit) };
+            }, [p]);
+
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+            const fmt = (n, f=0) => n.toLocaleString('zh-CN', { minimumFractionDigits: f, maximumFractionDigits: f });
+
+            const profitCols = [
+                { label: '单月', key: 'm', bold: false }, { label: '季度', key: 'q', bold: false }, { label: '全年', key: 'y', bold: false },
+                { label: '归母', key: 'attr', bold: true }, { label: 'PE', key: 'pe', bold: true, isPe: true }
+            ];
+
+            return (
+                <div className="w-full md:max-w-[710px] flex flex-col bg-white md:bg-white/90 dark:bg-ios-card md:dark:bg-ios-card/90 md:backdrop-blur-xl text-slate-900 dark:text-white shadow-xl rounded-2xl md:rounded-3xl border border-white/20 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/5 overflow-hidden transition-colors duration-300">
+                    {/* Header */}
+                    <div className="bg-white/80 dark:bg-ios-card/80 backdrop-blur-md shadow-sm border-b border-slate-200/60 dark:border-white/10 shrink-0 z-30 sticky top-0 transition-colors duration-300">
+                        <div className="px-4 py-4 flex items-center justify-between">
+                            <h1 className="text-[17px] font-semibold text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
+                                <div className="bg-indigo-500 p-1 rounded-md text-white shadow-sm"><i data-lucide="calculator" className="w-4 h-4"></i></div> 嘉澳环保 SAF 测算
+                            </h1>
+                            <div className="flex items-center gap-3">
+                                <button onClick={handleReset} className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 rounded-full transition-all active:scale-95"><i data-lucide="rotate-ccw" className="w-4 h-4"></i></button>
+                                <div className="flex items-center gap-2 bg-slate-100/80 dark:bg-[#2c2c2e] px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-white/5 shadow-inner">
+                                    <div className="flex items-center gap-1.5"><label className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 tracking-wide">股价</label><input type="number" value={typeof p.sharePrice==='number'?p.sharePrice.toFixed(2):p.sharePrice} onChange={e=>syncShare(e.target.value)} className="w-12 text-right text-sm font-semibold text-slate-900 dark:text-white bg-transparent outline-none"/></div>
+                                    <div className="w-px h-3 bg-slate-300 dark:bg-slate-600 mx-1"></div>
+                                    <div className="flex items-center gap-1.5"><label className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 tracking-wide">市值</label><input type="number" value={typeof p.marketCap==='number'?p.marketCap.toFixed(2):p.marketCap} onChange={e=>syncMarket(e.target.value)} className="w-12 text-right text-sm font-semibold text-slate-900 dark:text-white bg-transparent outline-none"/></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-[18rem_1fr] gap-0 md:gap-4 p-0 md:p-4 bg-slate-50/50 dark:bg-black/20">
+                        {/* 左侧：核心变量 */}
+                        <div className="flex flex-col h-full md:bg-white md:dark:bg-ios-card md:rounded-2xl md:shadow-sm md:border md:border-slate-100 md:dark:border-white/5 transition-colors duration-300">
+                            <div className="px-4 py-3 border-b border-slate-200/60 dark:border-white/10 shrink-0"><span className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="settings" className="w-3.5 h-3.5 text-slate-900 dark:text-slate-300"></i> 核心变量</span></div>
+                            <div className="p-4 flex flex-col gap-4">
+                                <ControlItem label="SAF 产量 (万吨)" subLabel="产能范围: 0-74.8万吨" value={p.safVolume} onChange={v=>upd('safVolume', v)} min={0} max={74.8} step={0.1} />
+                                <ControlItem label="SAF 出口价 ($/吨)" subLabel={`¥/吨: ${fmt(res.rev)}`} value={p.safPriceUsd} onChange={v=>upd('safPriceUsd', v)} min={1500} max={3000} step={10} />
+                                <ControlItem label="UCO 采购价 (¥/吨)" value={p.ucoPriceRmb} onChange={v=>upd('ucoPriceRmb', v)} min={4000} max={9000} step={10} />
+                                <ControlItem label="生物石脑油 (¥/吨)" subLabel={`产量: ${naphthaVol.toFixed(2)}万吨`} value={p.naphthaPriceRmb} onChange={v=>upd('naphthaPriceRmb', v)} min={4000} max={9000} step={100} />
+                                <div className="grid grid-cols-1 gap-1 pt-4 border-t border-slate-100 dark:border-white/10 content-start">
+                                    <SimpleInput label="汇率 (USD/RMB)" value={p.exchangeRate} onChange={v=>upd('exchangeRate', v)} />
+                                    <SimpleInput label="收率 (%)" value={p.yieldRate} onChange={v=>upd('yieldRate', v)} />
+                                    <SimpleInput label="加工成本 (¥/吨)" value={p.processCost} onChange={v=>upd('processCost', v)} />
+                                    <SimpleInput label="综合税率" value={p.taxFactor} onChange={v=>upd('taxFactor', v)} />
+                                    <SimpleInput label="权益比例 (%)" value={p.equityRatio} onChange={v=>upd('equityRatio', v)} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 右侧：结果展示 */}
+                        <div className="flex flex-col gap-3 p-4 md:p-0 h-full">
+                            {/* 单吨敏感度 */}
+                            <div className="bg-white dark:bg-ios-card rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 overflow-hidden shrink-0 transition-colors duration-300">
+                                <div className="bg-slate-50/50 dark:bg-white/5 px-4 py-3 border-b border-slate-100 dark:border-white/5 flex justify-between items-center"><span className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="arrow-right-left" className="w-3.5 h-3.5 text-slate-900 dark:text-slate-300"></i> 单吨敏感度 (¥/吨)</span></div>
+                                <table className="w-full text-xs text-left">
+                                    <thead className="text-slate-900 dark:text-slate-200 border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-white/5"><tr><th className="pl-6 pr-2 py-3 text-xs font-medium w-[25%]">指标</th><th className="px-2 py-3 text-xs font-medium text-slate-900 dark:text-white text-center w-[33%]">仅SAF</th><th className="px-2 py-3 text-xs font-medium text-indigo-600 dark:text-indigo-400 text-center w-[42%]">石脑油抵扣成本</th></tr></thead>
+                                    <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                                        <tr><td className="pl-6 pr-2 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-200">SAF 售价</td><td className="px-2 py-2.5 text-xs font-medium text-slate-900 dark:text-white text-center">{fmt(res.rev)}</td><td className="px-2 py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 text-center">{fmt(res.rev)}</td></tr>
+                                        <tr><td className="pl-6 pr-2 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-200">单吨成本</td><td className="px-2 py-2.5 text-xs font-medium text-slate-900 dark:text-white text-center">{fmt(res.grossCost)}</td><td className="px-2 py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 text-center">{fmt(res.netCost)} <span className="block text-xs text-indigo-600 dark:text-indigo-400 font-medium">抵扣 -{fmt(res.credit)}</span></td></tr>
+                                        <tr><td className="pl-6 pr-2 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-200">单吨毛利</td><td className="px-2 py-2.5 text-xs font-medium text-slate-900 dark:text-white text-center">{fmt(res.excl.profit)}</td><td className="px-2 py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 text-center">{fmt(res.incl.profit)}</td></tr>
+                                        <tr><td className="pl-6 pr-2 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-200">毛利率</td><td className="px-2 py-2.5 text-xs font-medium text-slate-900 dark:text-white text-center">{res.excl.margin.toFixed(1)}%</td><td className="px-2 py-2.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 text-center">{res.incl.margin.toFixed(1)}%</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* 利润概览 */}
+                            <div className="bg-white dark:bg-ios-card rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 p-4 flex flex-col shrink-0 transition-colors duration-300">
+                                <div className="grid grid-cols-5 gap-0 mb-4 border-b border-slate-100 dark:border-white/5 pb-3">
+                                    <div className="col-span-3 flex items-center gap-2 pr-4 border-r border-slate-100 dark:border-white/5"><i data-lucide="bar-chart-3" className="w-4 h-4 text-slate-900 dark:text-slate-300"></i><span className="font-bold text-sm text-slate-900 dark:text-white">利润概览 (亿)</span></div>
+                                    <div className="col-span-2 flex items-center justify-start pl-4"><span className="font-bold text-sm text-indigo-600 dark:text-indigo-400 leading-none">全年归母</span></div>
+                                </div>
+                                <div className="grid grid-cols-5 gap-0">
+                                    {[
+                                        { l: '单月', k: 'm', bold: false }, { l: '季度', k: 'q', bold: false }, { l: '全年', k: 'y', bold: false },
+                                        { l: '归母', k: 'attr', bold: true }, { l: 'PE', k: 'pe', bold: true, isPe: true }
+                                    ].map((c, i) => (
+                                        <div key={c.k} className={`flex flex-col text-center ${i < 4 ? 'border-r border-slate-100/60 dark:border-white/5' : ''}`}>
+                                            <div className={`text-xs text-slate-900 dark:text-slate-300 mb-2 uppercase ${c.bold ? 'font-bold' : 'font-medium'}`}>{c.l}</div>
+                                            <div className="text-xs font-medium text-slate-900 dark:text-white mb-1">{c.isPe ? (res.excl.pe>0&&isFinite(res.excl.pe)?res.excl.pe.toFixed(1):'-') : res.excl[c.k].toFixed(2)}</div>
+                                            <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400">{c.isPe ? (res.incl.pe>0&&isFinite(res.incl.pe)?res.incl.pe.toFixed(1):'-') : res.incl[c.k].toFixed(2)}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            {/* 生物石脑油贡献 */}
+                            <div className="bg-white dark:bg-ios-card rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 p-4 flex-1 flex flex-col justify-center transition-colors duration-300">
+                                <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-white/5 pb-3">
+                                    <div className="flex items-center gap-2"><i data-lucide="trending-up" className="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i><span className="font-bold text-sm text-slate-900 dark:text-white">生物石脑油贡献</span></div>
+                                    <span className="text-xs px-2 py-0.5 tracking-wide"><span className="text-slate-900 dark:text-white font-medium">SAF {Number(p.safVolume).toFixed(1)}万</span><span className="text-indigo-600 dark:text-indigo-400 font-medium"> | 生物石脑油 {naphthaVol.toFixed(2)}万</span></span>
+                                </div>
+                                <div className="relative pt-1 pb-1">
+                                    <div className="w-full bg-slate-100 dark:bg-white/10 rounded-full h-7 overflow-hidden relative flex ring-1 ring-black/5 dark:ring-white/5">
+                                        <div className="bg-slate-400/20 dark:bg-white/10 h-full flex items-center justify-center text-[11px] text-slate-900 dark:text-white font-bold overflow-hidden whitespace-nowrap px-2 backdrop-blur-sm" style={{ width: `${(res.excl.y / res.incl.y) * 100}%` }}>
+                                            <span className="text-xs font-medium">{res.excl.y.toFixed(2)}亿</span>
+                                        </div>
+                                        <div className="bg-indigo-500 dark:bg-indigo-600 h-full flex items-center justify-center text-[11px] text-white font-bold overflow-hidden whitespace-nowrap px-2 shadow-sm" style={{ flex: 1 }}>
+                                            <span className="text-xs font-medium text-white">+{ (res.incl.y - res.excl.y).toFixed(2)} 亿</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<JiaaoSafCalculator />);
+    </script>
+</body>
+</html>
